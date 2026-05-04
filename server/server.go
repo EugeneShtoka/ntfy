@@ -1166,6 +1166,7 @@ func (s *Server) parsePublishParams(r *http.Request, m *model.Message) (cache bo
 		}
 	}
 	cache = readBoolParam(r, true, "x-cache", "cache")
+	m.Persist = readOptionalBoolParam(r, "x-persist", "persist")
 	firebase = readBoolParam(r, true, "x-firebase", "firebase")
 	m.Title = readParam(r, "x-title", "title", "t")
 	m.Click = readParam(r, "x-click", "click")

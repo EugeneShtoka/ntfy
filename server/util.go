@@ -30,6 +30,16 @@ var (
 	forwardedHeaderRegex = regexp.MustCompile(`(?i)\bfor="?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[[0-9a-f:]+])(?::\d+)?"?`)
 )
 
+// readOptionalBoolParam returns nil if the param is not set, otherwise a pointer to the parsed bool value.
+func readOptionalBoolParam(r *http.Request, names ...string) *bool {
+	value := strings.ToLower(readParam(r, names...))
+	if value == "" || !isBoolValue(value) {
+		return nil
+	}
+	b := toBool(value)
+	return &b
+}
+
 func readBoolParam(r *http.Request, defaultValue bool, names ...string) bool {
 	value := strings.ToLower(readParam(r, names...))
 	if value == "" {
