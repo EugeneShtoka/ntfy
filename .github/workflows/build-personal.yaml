@@ -1,0 +1,47 @@
+name: Build binary
+
+on:
+  push:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.25.x'
+
+      - name: Build ntfy binary
+        run: |
+          mkdir -p server/docs server/site
+          touch server/docs/index.html server/site/app.html
+          CGO_ENABLED=1 go build -o ntfy .
+          gzip -9 ntfy
+          mv ntfy.gz ntfy-linux-amd64.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ntfy-linux-amd64
+          path: ntfy-linux-amd64.gz
+          retention-days: 7
+
+      - name: Send binary via email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.NOTIFY_EMAIL }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "ntfy server build — ${{ github.ref_name }}"
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          from: ${{ secrets.NOTIFY_FROM }}
+          body: |
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            ${{ github.event.head_commit.message }}
+
+            Deploy: gunzip ntfy-linux-amd64.gz && sudo mv ntfy-linux-amd64 /usr/local/bin/ntfy && sudo systemctl restart ntfy
+          attachments: ntfy-linux-amd64.gz
